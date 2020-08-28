@@ -1,2 +1,4 @@
 for k in range(8):
-    print k
+    print(k)
+
+y = 12
