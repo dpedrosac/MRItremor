@@ -3,9 +3,6 @@ import os
 import glob
 import subprocess
 
-patients_ids = [
-    "3571", "4698", "7101"
-]
 
 test_folder = ""
 
