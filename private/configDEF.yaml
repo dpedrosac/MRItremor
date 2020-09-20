@@ -1,0 +1,12 @@
+# config file saving all important data
+%YAML 1.1
+---
+- folders:
+    Kavi Karan:
+      datpath:  'data/patients/'
+      testdat: 'data/patients/4701P'
+      path2itksnap: ''
+    david:
+      datpath:   '/media/david/windows/Dokumente und Einstellungen/dpedrosa/Jottacloud/onoff_svm/analyses/csvdata/nopca/'
+      testdat: 'data/patients/4701P'
+      path2itksnap: ''

@@ -1,0 +1,10 @@
+---
+folders:
+  Kavi Karan:
+    datpath: /data/patients/
+    path2itksnap: ''
+    testdat: /data/patients/4701P
+  david:
+    datpath: /data/patients/
+    path2itksnap: /usr/lib/snap-3.6.0
+    testdat: data/patients/4701P

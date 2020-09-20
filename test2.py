@@ -2,9 +2,16 @@ import os
 # import ants
 import glob
 import subprocess
+import getpass
+from dependencies import ROOTDIR, CONFIGDATA
+from utils.HelperFunctions import Output, Configuration, Imaging
 
+try:
+    Imaging.set_viewer()
+except ValueError:
+    Output.msg_box(text="Something went wrong with defining the standard location for ITK-snap!",
+               title="Problem defining ITKSnap location")
 
-test_folder = ""
 
 # Start with general commands
 if os.getlogin() == 'david':
@@ -19,5 +26,7 @@ elif os.getlogin() == 'Kavi Karan':
 t2image = glob.glob(os.path.join(test_folder, '*t2*.nii.gz'))
 
 print(t2image)
+Imaging.load_imageviewer(path2viewer=CONFIGDATA["folders"][getpass.getuser()]["path2itksnap"], file_names=t2image)
 
+# Start loading data to Ants
 
