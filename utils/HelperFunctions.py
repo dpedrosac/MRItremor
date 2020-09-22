@@ -171,15 +171,14 @@ class Imaging:
             default_folders = ["/etc/bin/", "/usr/lib/snap-3.6.0", "/usr/lib/snap-3.6.0/ITK-SNAP",
                                os.path.join(ROOTDIR, 'ext', 'snap-3.6.0')]
         elif platform == 'macos' or platform == 'darwin':
-            default_folders = ["/Applications/ITK-SNAP.app/"]
+            default_folders = ["/Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP"]
 
         try:
             folder = [folder_id for folder_id in default_folders if os.path.isfile(os.path.join(folder_id, "ITK-SNAP"))]
         except KeyError:
-            folder = QFileDialog.getExistingDirectory('Please indicate location of ITK-SNAP.')
+            folder = QFileDialog.getExistingDirectory(caption='Please indicate location of ITK-SNAP.')
 
         # Here a dialog is needed in case folder has many flags to folders with itk-snap
-
         return folder[0]
 
     @staticmethod
@@ -187,7 +186,7 @@ class Imaging:
         """loads selected NIFTI-files in imageviewer"""
 
         if not file_names:
-            Output.msg_box(txt="The provided list with NIFTI-files is empty, please double-check",
+            Output.msg_box(text="The provided list with NIFTI-files is empty, please double-check",
                            title="No NIFTI-files provided")
             return
 
@@ -198,9 +197,9 @@ class Imaging:
                 cmd = ["itksnap", "-g", file_names[0], "-o", *file_names[1:]]
         elif sys.platform == 'macos' or sys.platform == 'darwin':
             if len(file_names) == 1:
-                cmd = ["itksnap", "-g", file_names[0]]
+                cmd = ["/Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP", "-g", file_names[0]]
             else:
-                cmd = ["itksnap", "-g", file_names[0], "-o", *file_names[1:]]
+                cmd = ["/Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP", "-g", file_names[0], "-o", *file_names[1:]]
 
             # TODO: add sudo /Applications/ITK-SNAP.app/Contents/bin/install_cmdl.sh to the setup
             # TODO: change ITK-SNAP so that it does not freeze the entire script

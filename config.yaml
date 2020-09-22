@@ -1,8 +1,8 @@
 ---
 folders:
-  Kavi Karan:
+  kavikaran:
     datpath: /data/patients/
-    path2itksnap: ''
+    path2itksnap: /Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP
     testdat: /data/patients/4701P
   david:
     datpath: /data/patients/
