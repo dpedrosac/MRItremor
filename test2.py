@@ -40,15 +40,33 @@ t2image = glob.glob(os.path.join(test_folder, '*t2*.nii.gz'))
 # Imaging.load_imageviewer(path2viewer=CONFIGDATA["folders"][getpass.getuser()]["path2itksnap"], file_names=t2image)
 
 # Start loading data to Ants
-img = ants.image_read(t2image[0])
+original_image = ants.image_read(t2image[0])
 
-print(img)
+# ==============================          N4BiasCorrection          ==============================
+# General settings
+shrink_factor = 4
+convergence = [50,50,50,50]
+threshold = 1e-07
+bspline_fitting = 200
+filename_save_bcorr = 'bcorr-' + os.path.split(t2image[0])[1]
+bcorr_image = ants.utils.n4_bias_field_correction(original_image,
+                                                  mask=None,
+                                                  shrink_factor=shrink_factor,
+                                                  convergence={'iters':convergence, 'tol': threshold},
+                                                  spline_param= bspline_fitting, verbose=True, weight_mask=None)
 
+ants.image_write(bcorr_image, filename=filename_save_bcorr)
+
+filename_save_bcorrdiff = 'bcorr_diff-' + os.path.split(t2image[0])[1]
+diff_image = original_image - bcorr_image
+ants.image_write(diff_image, filename=os.path.join(os.path.split(t2image[0])[0], filename_save_bcorrdiff))
+
+
+
+#img = ants.resample_image(img, (128, 128, 128), True, 0)
+#mask = ants.get_mask(img, (128, 128, 128), 1, 0)
+#print(img)
 #
-img = ants.resample_image(img, (128, 128, 128), True, 0)
-mask = ants.get_mask(img, (128, 128, 128), 1, 0)
-print(img)
-#
-img_seg = ants.atropos(a=img, m='[0.2, 1x1x1]', c='[5,0]', i='Kmeans[3]', x=mask)
-print(img_seg.keys())
-ants.plot(img_seg['segmentation'])
+#img_seg = ants.atropos(a=img, m='[0.2, 1x1x1]', c='[5,0]', i='Kmeans[3]', x=mask)
+#print(img_seg.keys())
+#ants.plot(img_seg['segmentation'])
