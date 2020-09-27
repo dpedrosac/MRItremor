@@ -1,13 +1,9 @@
 import os
 import ants
 import glob
-import subprocess
-import getpass
-import sys
 
 from PyQt5.QtWidgets import QApplication, QLabel
 
-from dependencies import ROOTDIR, CONFIGDATA
 from utils.HelperFunctions import Output, Configuration, Imaging
 
 # initializing a QT application instance
@@ -36,6 +32,9 @@ elif os.getlogin() == 'root':
 
 
 t2image = glob.glob(os.path.join(test_folder, '*t2*.nii.gz'))
+print(t2image)
+exit()
+
 if len(t2image) < 1:
     Output.msg_box(text="No files were found, please make sure only one file is present",
                    title="no files present")
