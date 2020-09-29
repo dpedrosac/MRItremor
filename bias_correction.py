@@ -81,7 +81,7 @@ bias_corrected_image = ants.utils.n4_bias_field_correction(
 original_file_name = os.path.split(test_t2image[0])[1]
 useful_part = original_file_name.split('_t2_')[0]
 new_filename_bcorr = f"bcorr_{useful_part}.nii.gz"
-new_filename_bcorr_diff = f"bcorr_diff_{useful_part}.nii.gz"
+new_filename_bcorr_diff = f"bc_diff_{useful_part}.nii.gz"
 new_full_filename_bcorr = os.path.join(f"{ROOTDIR}{TEST_DATA_PATH}", new_filename_bcorr)
 new_full_filename_bcorr_diff = os.path.join(f"{ROOTDIR}{TEST_DATA_PATH}", new_filename_bcorr_diff)
 
