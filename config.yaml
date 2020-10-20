@@ -3,10 +3,23 @@ folders:
   kavikaran:
     datpath: /data/patients/
     path2itksnap: /Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP
-    testdata: /data/patients/4701P
+    testdata: /data/patients/4839P
     standarddata: /data/standard/
-    outputpath: /data/output/4701P
+    outputpath: /data/output/4839P
   david:
-    datpath: /data/patients/
+    datpath: data/patients/
     path2itksnap: /usr/lib/snap-3.6.0
     testdata: data/patients/4701P
+    outputpath: data/output/4839P
+preprocess:
+  ANTsN4:
+    bspline-fitting: 200
+    convergence:
+    - 50
+    - 50
+    - 50
+    - 50
+    denoise: 'no'
+    prefix: bc_
+    shrink-factor: 4
+    threshold: 1.0e-07

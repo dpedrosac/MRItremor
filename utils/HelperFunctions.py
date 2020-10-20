@@ -283,15 +283,6 @@ class Imaging:
         Imaging.load_imageviewer(viewer_path, sorted(file_IDs))
 
     @staticmethod
-    def create_brainmask(input_folder, registered_images):
-        """this function import antspynet in order to obtain a probabilistic brain mask for the T1 imaging"""
-        import ants, antspynet
-        filename_brainmask = os.path.join(input_folder, 'brainmask_T1.nii')
-
-        brainmask = antspynet.brain_extraction(image=registered_images, verbose=False)
-        ants.image_write(image=brainmask, filename=filename_brainmask)
-
-    @staticmethod
     def sphere(diameter):
         """function defining binary matrix which represents a 3D sphere which may be used as structuring element"""
 

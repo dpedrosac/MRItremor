@@ -1,7 +1,6 @@
 temp/
 data/
 logs/
-tests/
 ext/templates
 !ext/templates/mni_icbm152_nlin_asym_09b
 
