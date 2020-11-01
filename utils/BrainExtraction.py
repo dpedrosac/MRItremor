@@ -6,7 +6,7 @@ import os
 import re
 import time
 import ants
-# import antspynet
+import antspynet
 
 from utils.HelperFunctions import Imaging, FileOperations
 from dependencies import ROOTDIR, FILEDIR, CONFIGDATA
@@ -47,6 +47,6 @@ class AntsPyX:
 
     def create_brainmask(self, registered_images, filename2save='brainmask_T1.nii', modality='t1combined'):
         """this function import antspynet in order to obtain a probabilistic brain mask for the T1 imaging"""
-
-        brainmask = antspynet.brain_extraction(image=registered_images, modality=modality, verbose=self.verbose)
+        ants_image = ants.image_read(registered_images)
+        brainmask = antspynet.brain_extraction(image=ants_image, modality=modality, verbose=self.verbose)
         ants.image_write(image=brainmask, filename=filename2save)
