@@ -1,7 +1,7 @@
 ---
 folders:
   kavikaran:
-    datpath: /data/patients/
+    datpath: data/patients/
     path2itksnap: /Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP
     testdata: /data/patients/4839P
     standarddata: /data/standard/
