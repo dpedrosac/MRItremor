@@ -30,17 +30,28 @@ class AntsPyX:
         FileOperations.create_folder(output_folder)
 
         start_extraction = time.time()
-        sequences = {'t1':'_MDEFT3D', 't2':'_t2_'}
-        list_of_files = {k:[] for k in sequences.keys()}
+        sequences = {'t1': '_MDEFT3D', 't2': '_t2_'}
+        list_of_files = {k: [] for k in sequences.keys()}
+
+        print(list_of_files)
+
         for seq, keyword in sequences.items():
             list_of_files[seq] = [x for x in allfiles if x[0].endswith('.gz') and
-                                  any(re.search(r'\w+(?!_).({})|^({}[\-])\w+.|^({})[a-z\-\_0-9].'.format(z, z, z), os.path.basename(x[0]),
-                                                re.IGNORECASE) for z in [keyword]*3) and not
-                                  any(re.search(r'\w+(?!_).({})|^({}[\-])\w+.|^({})[a-z\-\_0-9].'.format(z, z, z), os.path.basename(x[0]),
+                                  any(re.search(r'\w+(?!_).({})|^({}[\-])\w+.|^({})[a-z\-\_0-9].'.format(z, z, z),
+                                                os.path.basename(x[0]),
+                                                re.IGNORECASE) for z in [keyword] * 3) and not
+                                  any(re.search(r'\w+(?!_).({})|^({}[\-])\w+.|^({})[a-z\-\_0-9].'.format(z, z, z),
+                                                os.path.basename(x[0]),
                                                 re.IGNORECASE) for z in strings2exclude)]
-            filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(list_of_files[seq][0][0])[1])
-            modality='t1combined' if seq=='t1' else 't2'
-            self.create_brainmask(list_of_files[seq][0][0], filename2save=filename2save, modality=modality)
+
+            for file in list_of_files[seq]:
+                print(f"creating mask for {file[0]}")
+
+                filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(file[0])[1])
+                modality = 't1combined' if seq == 't1' else 't2'
+                self.create_brainmask(file[0], filename2save=filename2save, modality=modality)
+
+                print("mask created... ok\n")
 
         print('\nIn total, a list of {} file(s) was processed \nOverall, brain_extraction took '
               '{:.1f} secs.'.format(len(subjects), time.time() - start_extraction))
