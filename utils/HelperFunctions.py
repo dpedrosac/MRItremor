@@ -340,13 +340,18 @@ class FileOperations:
         return filelist
 
     @staticmethod
-    def get_filelist_as_tuple(inputdir, subjects):
+    def get_filelist_as_tuple(inputdir, subjects, subdir=''):
         """create a list of all available files in a folder and returns tuple together with the name of subject"""
 
         allfiles = []
-        [allfiles.extend(
-            zip(glob.glob(os.path.join(inputdir, x + "/*")), [x] * len(glob.glob(os.path.join(inputdir, x + "/*")))))
-            for x in subjects]
+        if subdir:
+            [allfiles.extend(
+                zip(glob.glob(os.path.join(inputdir, x, subdir + "/*")), [x] * len(glob.glob(os.path.join(inputdir, x, subdir + "/*")))))
+                for x in subjects]
+        else:
+            [allfiles.extend(
+                zip(glob.glob(os.path.join(inputdir, x + "/*")), [x] * len(glob.glob(os.path.join(inputdir, x + "/*")))))
+                for x in subjects]
 
         return allfiles
 

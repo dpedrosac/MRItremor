@@ -19,8 +19,13 @@ ITKSNAP_LOCATION = CONFIGDATA['folders'][getpass.getuser()]['path2itksnap']
 TEST_ROOT_FOLDER = f"{ROOTDIR}{TEST_DATA_PATH}"
 STANDARD_DATA = f"{ROOTDIR}{STANDARD_DATA_PATH}"
 
-FIXED = glob.glob(os.path.join(STANDARD_DATA, 'standard.nii'))
-IMAGE1 = glob.glob(os.path.join(TEST_ROOT_FOLDER, '*t2*.nii.gz'))
+if getpass.getuser() == 'david':
+    FIXED = glob.glob(os.path.join(STANDARD_DATA, 'mni_icbm152_t2_tal_nlin_asym_09b_hires.nii'))
+    IMAGE1 = glob.glob(os.path.join(TEST_ROOT_FOLDER, '*bcorr-*t2*.nii.gz'))
+else:
+    FIXED = glob.glob(os.path.join(STANDARD_DATA, 'standard.nii'))
+    IMAGE1 = glob.glob(os.path.join(TEST_ROOT_FOLDER, '*t2*.nii.gz'))
+
 
 print(FIXED)
 print(IMAGE1[0])
@@ -38,7 +43,7 @@ moving_image = ants.image_read(IMAGE1[0])
 fixed_image.plot(overlay=moving_image, title="Before Registration", axis=1, overlay_alpha=0.25)
 
 #
-mytx = ants.registration(fixed=fixed_image, moving=moving_image, type_of_transform='SyN')
+mytx = ants.registration(fixed=fixed_image, moving=moving_image, type_of_transform='SyN', verbose=True)
 print(mytx)
 wrapped_image = mytx['warpedmovout']
 

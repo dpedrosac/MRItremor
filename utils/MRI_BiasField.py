@@ -66,7 +66,7 @@ class Correction:
         parallel; For that a list of tuples including the entire filename and the subject to be processed are entered"""
 
         status.put(tuple([mp.current_process().name, subj, os.path.basename(file2rename)]))
-        output_folder = os.path.join(FILEDIR, 'output')
+        output_folder = os.path.join(FILEDIR, subj, 'output')
         FileOperations.create_folder(output_folder)
         filename_save = os.path.join(output_folder, self.cfg['prefix'] + os.path.basename(file2rename))
 
@@ -131,7 +131,7 @@ class Correction:
         for file2rename, no_subj in fileIDs:
             print("\tDebiasing subj: {}, filename: {}".format(no_subj, file2rename))
             input_folder = os.path.join(FILEDIR, no_subj)
-            output_folder = os.path.join(FILEDIR, 'output')
+            output_folder = os.path.join(FILEDIR, no_subj, 'output')
             FileOperations.create_folder(output_folder)
             filename_save = os.path.join(output_folder, self.cfg['prefix'] + os.path.basename(file2rename))
 
