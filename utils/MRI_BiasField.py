@@ -129,6 +129,7 @@ class Correction:
         # ------------------------------    Start sequential routines  ------------------------------ #
         start_multi = time.time()
         for file2rename, no_subj in fileIDs:
+            single_time = time.time()
             print("\tDebiasing subj: {}, filename: {}".format(no_subj, file2rename))
             input_folder = os.path.join(FILEDIR, no_subj)
             output_folder = os.path.join(FILEDIR, no_subj, 'output')
@@ -169,5 +170,6 @@ class Correction:
                 bcorr_image = Imaging.resampleANTsImaging(mm_spacing=spacing, ANTsImageObject=bcorr_image,
                                                           file_id=filename_save, method=1)
                 ants.image_write(bcorr_image, filename=filename_save)
+                print(f"Time taken for bias correction: {(time.time()-single_time):.2f}")
             else:
                 print('\t ...already finished, skipped')

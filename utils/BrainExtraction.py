@@ -7,6 +7,7 @@ import re
 import time
 import ants
 import antspynet
+import sys
 
 from utils.HelperFunctions import Imaging, FileOperations
 from dependencies import ROOTDIR, FILEDIR, CONFIGDATA
@@ -24,8 +25,8 @@ class AntsPyX:
         https://github.com/ANTsX/ANTsPyNet/blob/master/antspynet/utilities/brain_extraction.py."""
 
         print('\nExtracting the brain of {} subject(s)'.format(len(subjects)))
-        allfiles = FileOperations.get_filelist_as_tuple(FILEDIR, subjects)
-        strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'bc_', 'diff_']
+        allfiles = FileOperations.get_filelist_as_tuple(f"{FILEDIR}", subjects, subdir='output')
+        strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'bc_', 'diff_', 'reg_']
         output_folder = os.path.join(FILEDIR, 'output')
         FileOperations.create_folder(output_folder)
 
@@ -33,7 +34,8 @@ class AntsPyX:
         sequences = {'t1': '_MDEFT3D', 't2': '_t2_'}
         list_of_files = {k: [] for k in sequences.keys()}
 
-        print(list_of_files)
+        # print(allfiles)
+        template_folder = os.path.join(ROOTDIR, 'data', 'template', 'icbm152')
 
         for seq, keyword in sequences.items():
             list_of_files[seq] = [x for x in allfiles if x[0].endswith('.gz') and
@@ -44,14 +46,20 @@ class AntsPyX:
                                                 os.path.basename(x[0]),
                                                 re.IGNORECASE) for z in strings2exclude)]
 
-            for file in list_of_files[seq]:
-                print(f"creating mask for {file[0]}")
+        # print(list_of_files['t1'])
+        # sys.exit()
 
-                filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(file[0])[1])
-                modality = 't1combined' if seq == 't1' else 't2'
-                self.create_brainmask(file[0], filename2save=filename2save, modality=modality)
+        for file in list_of_files['t1']:
+            print(f"creating mask for {file[0]}")
 
-                print("mask created... ok\n")
+            filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(file[0])[1])
+            modality = 't1combined' if seq == 't1' else 't2'
+
+            template = os.path.join(template_folder, 'mni_icbm152_t1_tal_nlin_asym_09b_hires.nii')
+
+            self.create_brainmask(file[0], template=template, filename2save=filename2save, modality=modality)
+
+            print("mask created... ok\n")
 
         print('\nIn total, a list of {} file(s) was processed \nOverall, brain_extraction took '
               '{:.1f} secs.'.format(len(subjects), time.time() - start_extraction))
@@ -75,7 +83,6 @@ class AntsPyX:
 
         reorient_template = ants.resample_image(reorient_template, (256, 256, 128), True, 0)
         resampled_image_size = reorient_template.shape
-
 
         unet_model = antspynet.create_unet_model_3d((*resampled_image_size, channel_size),
                                                     number_of_outputs=number_of_classification_labels,
@@ -157,7 +164,7 @@ class AntsPyX:
         elapsed_time = end_time - start_time
         print("  (elapsed time: ", elapsed_time, " seconds)")
 
-        probability_image.plot(title="After Extraction", axis=1)
+        # probability_image.plot(title="After Extraction", axis=1)
 
         print("Writing", 'brainmask_test_t1.nii.gz')
         start_time = time.time()
@@ -169,8 +176,6 @@ class AntsPyX:
         end_time_total = time.time()
         elapsed_time_total = end_time_total - start_time_total
         print("Total elapsed time: ", elapsed_time_total, "seconds")
-
-
 
         ants_image = ants.image_read(registered_images)
         brainmask = antspynet.brain_extraction(image=ants_image, modality=modality, verbose=self.verbose)
