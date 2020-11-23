@@ -309,8 +309,16 @@ class FileOperations:
     def list_folders(inputdir, prefix='subj', files2lookfor='NIFTI'):
         """takes folder and lists all available subjects in this folder according to some filter given as [prefix]"""
 
-        list_all = [name for name in os.listdir(inputdir)
-                    if (os.path.isdir(os.path.join(inputdir, name)) and prefix in name)]
+        # list_all = [name for name in os.listdir(inputdir)
+        #             if (os.path.isdir(os.path.join(inputdir, name)) and prefix in name)]
+
+        if prefix:
+            list_all = [name for name in os.listdir(inputdir)
+                        if (os.path.isdir(os.path.join(inputdir, name)) and re.search(r"{}".format(prefix), name))]
+        else:
+            list_all = [name for name in os.listdir(inputdir)
+                if (os.path.isdir(os.path.join(inputdir, name)) and prefix in name)]
+
 
         if list_all == '':
             list_subj = 'No available subjects, please make sure {}-files are present and correct ' \

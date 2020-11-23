@@ -25,10 +25,8 @@ class AntsPyX:
         https://github.com/ANTsX/ANTsPyNet/blob/master/antspynet/utilities/brain_extraction.py."""
 
         print('\nExtracting the brain of {} subject(s)'.format(len(subjects)))
-        allfiles = FileOperations.get_filelist_as_tuple(f"{FILEDIR}", subjects, subdir='output')
+        allfiles = FileOperations.get_filelist_as_tuple(f"{FILEDIR}", subjects, subdir='')
         strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'bc_', 'diff_', 'reg_']
-        output_folder = os.path.join(FILEDIR, 'output')
-        FileOperations.create_folder(output_folder)
 
         start_extraction = time.time()
         sequences = {'t1': '_MDEFT3D', 't2': '_t2_'}
@@ -50,6 +48,9 @@ class AntsPyX:
         # sys.exit()
 
         for file in list_of_files['t1']:
+            output_folder = os.path.join(FILEDIR, file[1], 'output')
+            FileOperations.create_folder(output_folder)
+
             print(f"creating mask for {file[0]}")
 
             filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(file[0])[1])
@@ -58,7 +59,8 @@ class AntsPyX:
             template = os.path.join(template_folder, 'mni_icbm152_t1_tal_nlin_asym_09b_hires.nii')
 
             self.create_brainmask(file[0], template=template, filename2save=filename2save, modality=modality)
-
+            self.skullstrip(image=file[0], mask=filename2save,
+                            output_file=os.path.join(output_folder, 'noskull_' + os.path.split(file[0])[1]))
             print("mask created... ok\n")
 
         print('\nIn total, a list of {} file(s) was processed \nOverall, brain_extraction took '
@@ -168,7 +170,7 @@ class AntsPyX:
 
         print("Writing", 'brainmask_test_t1.nii.gz')
         start_time = time.time()
-        ants.image_write(probability_image, 'brainmask_test_t1.nii.gz')
+        ants.image_write(probability_image, filename2save)
         end_time = time.time()
         elapsed_time = end_time - start_time
         print("  (elapsed time: ", elapsed_time, " seconds)")
@@ -177,6 +179,13 @@ class AntsPyX:
         elapsed_time_total = end_time_total - start_time_total
         print("Total elapsed time: ", elapsed_time_total, "seconds")
 
-        ants_image = ants.image_read(registered_images)
-        brainmask = antspynet.brain_extraction(image=ants_image, modality=modality, verbose=self.verbose)
-        ants.image_write(image=brainmask, filename=filename2save)
+    def skullstrip(self, image, mask, output_file):
+        """removes all parts outside the brain """
+
+        img_pre = ants.image_read(image)
+        beyondskull = ants.image_read(mask)
+        skullmask = ants.threshold_image(beyondskull, 0, .5, 1,0)
+        img_post = img_pre * skullmask
+        ants.plot(skullmask)
+
+        ants.image_write(image=img_post, filename=output_file)

@@ -23,7 +23,7 @@ class Registration:
 
         print('\nRegistering imaging of {} subject(s) to template'.format(len(subjects)))
         allfiles = FileOperations.get_filelist_as_tuple(FILEDIR, subjects, subdir='output')
-        strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'norm_', 'diff_']
+        strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'norm_', 'diff_', 'reg_', 'wfi_']
 
         fileIDs = [x for x in allfiles if x[0].endswith('.gz') and not
         any(re.search(r'\w+(?!_).({})|^({}[\-])\w+.|^({})[a-z\-\_0-9].'.format(z, z, z), os.path.basename(x[0]),
