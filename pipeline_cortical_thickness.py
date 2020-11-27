@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-from utils.HelperFunctions import Configuration, Output, FileOperations, Imaging
+from utils.HelperFunctions import Output, FileOperations, Imaging
 from utils import CreateTemplate
 
-from utils import MRI_BiasField as BiasFieldCorrection
-from utils import TemplateRegistration as Normalization
-from utils import BrainExtraction
+from utils import PreprocessT1MRI
+
+from test import BrainExtraction
 from dependencies import FILEDIR, ROOTDIR
 
 if __name__ == "__main__":
@@ -19,11 +19,14 @@ if __name__ == "__main__":
 
     # Get files ready to analyse using the functions in the HelperFunctions.py module
     subjects2analyse = list(FileOperations.list_folders(os.path.join(ROOTDIR, FILEDIR), prefix='[\d+]'))
-
-    group_template = os.path.join(FILEDIR, 'group_template.nii')
+    group_template = os.path.join(ROOTDIR, FILEDIR, 'group_template.nii')
     if not os.path.isfile(group_template):
         CreateTemplate.all_subjects(subjects=subjects2analyse, output_dir=FILEDIR)
 
+    imaging, fileID = PreprocessT1MRI.create_list_of_subjects(subjects=subjects2analyse)
+    preprocessed_data = PreprocessT1MRI.preprocessMRIbatch(imaging=imaging,
+                                                           template_sequence=group_template,
+                                                           fileID=fileID)
     # Skull strip at this point here
     BrainExtraction.AntsPyX().extract_list_of_patients(subjects=subjects2analyse, template=group_template)
 

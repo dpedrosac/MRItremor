@@ -14,7 +14,8 @@ def get_registered_image(patient_id='4698P', type='t2'):
     return file[0]
 
 
-TEST_PATIENT = '4698P'
+# TEST_PATIENT = '4698P'
+TEST_PATIENT = '4701P'
 
 
 start_time = time.time()

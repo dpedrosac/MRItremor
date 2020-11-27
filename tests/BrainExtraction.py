@@ -8,6 +8,7 @@ import time
 import ants
 import antspynet
 import sys
+import numpy as np
 
 from utils.HelperFunctions import Imaging, FileOperations
 from dependencies import ROOTDIR, FILEDIR, CONFIGDATA
@@ -20,7 +21,7 @@ class AntsPyX:
         self.verbose = False
         pass
 
-    def extract_list_of_patients(self, subjects):
+    def extract_list_of_patients(self, subjects, template):
         """Brain extraction using the routines from the ANTs environment  cf.
         https://github.com/ANTsX/ANTsPyNet/blob/master/antspynet/utilities/brain_extraction.py."""
 
@@ -52,7 +53,6 @@ class AntsPyX:
             FileOperations.create_folder(output_folder)
 
             print(f"creating mask for {file[0]}")
-
             filename2save = os.path.join(output_folder, 'brainmask_' + os.path.split(file[0])[1])
             modality = 't1combined' if seq == 't1' else 't2'
 
@@ -66,7 +66,8 @@ class AntsPyX:
         print('\nIn total, a list of {} file(s) was processed \nOverall, brain_extraction took '
               '{:.1f} secs.'.format(len(subjects), time.time() - start_extraction))
 
-    def create_brainmask(self, registered_images, template, filename2save='brainmask_T1.nii', modality='t1combined'):
+    def create_brainmask(self, registered_images, template, filename2save='brainmask_T1.nii', modality='t1combined',
+                         truncate_intensity=(.01, .99)):
         """this function import antspynet in order to obtain a probabilistic brain mask for the T1 imaging"""
         import numpy as np
 
@@ -111,7 +112,17 @@ class AntsPyX:
         print("Reading ", registered_images)
         start_time = time.time()
         image = ants.image_read(registered_images)
-        image = (image - image.min()) / (image.max() - image.min())
+        preprocessed_image = ants.image_clone(image)
+
+        quantiles = (image.quantile(truncate_intensity[0]), image.quantile(truncate_intensity[1]))
+        verbose=True
+        if verbose == True:
+            print("Preprocessing:  truncate intensities ( low =", quantiles[0], ", high =", quantiles[1], ").")
+
+        preprocessed_image[image < quantiles[0]] = quantiles[0]
+        preprocessed_image[image > quantiles[1]] = quantiles[1]
+
+        image = (preprocessed_image - preprocessed_image.min()) / (preprocessed_image.max() - preprocessed_image.min())
         end_time = time.time()
         elapsed_time = end_time - start_time
         print("  (elapsed time: ", elapsed_time, " seconds)")
@@ -178,14 +189,3 @@ class AntsPyX:
         end_time_total = time.time()
         elapsed_time_total = end_time_total - start_time_total
         print("Total elapsed time: ", elapsed_time_total, "seconds")
-
-    def skullstrip(self, image, mask, output_file):
-        """removes all parts outside the brain """
-
-        img_pre = ants.image_read(image)
-        beyondskull = ants.image_read(mask)
-        skullmask = ants.threshold_image(beyondskull, 0, .5, 1,0)
-        img_post = img_pre * skullmask
-        ants.plot(skullmask)
-
-        ants.image_write(image=img_post, filename=output_file)
