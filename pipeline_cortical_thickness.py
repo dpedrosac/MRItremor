@@ -6,7 +6,7 @@ from utils import CreateTemplate
 
 from utils import PreprocessT1MRI
 
-from test import BrainExtraction
+from tests import BrainExtraction
 from dependencies import FILEDIR, ROOTDIR
 
 if __name__ == "__main__":
