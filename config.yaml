@@ -1,7 +1,7 @@
 ---
 folders:
   kavikaran:
-    datpath: /Users/kavikaran/Desktop/MRI-PROJECT/data/patients/
+    datpath: /Users/kavikaran/Desktop/MRI-PROJECT/data/
     path2itksnap: /Applications/ITK-SNAP.app/Contents/MacOS/ITK-SNAP
     testdata: /data/test/3571P/
     standarddata: /data/standard/
