@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # Get files ready to analyse using the functions in the HelperFunctions.py module
     subjects2analyse = list(FileOperations.list_folders(os.path.join(ROOTDIR, FILEDIR), prefix='[\d+]'))
 
-    group_template = os.path.join(ROOTDIR, FILEDIR, 'group_template.nii')
+    group_template = os.path.join(FILEDIR, 'group_template.nii')
     if not os.path.isfile(group_template):
         CreateTemplate.all_subjects(subjects=subjects2analyse, output_dir=FILEDIR)
 
