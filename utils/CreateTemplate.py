@@ -41,7 +41,8 @@ def all_subjects(subjects, output_dir=FILEDIR):
                                          gradient_step=0.2,
                                          verbose=True,
                                          syn_metric='CC',
-                                         reg_iterations=(100, 70, 50, 0))
+                                         reg_iterations=(100, 70, 50, 0)
+                                         )
 
     ants.image_write(group_template, os.path.join(output_dir, 'group_template.nii'))
 
