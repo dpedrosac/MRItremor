@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-from utils.HelperFunctions import Output, FileOperations, Imaging
-from utils import CreateTemplate
 
-from utils import PreprocessT1MRI
-
-from test import BrainExtraction
 from dependencies import FILEDIR, ROOTDIR
+from utils import CreateTemplate
+from utils import PreprocessT1MRI
+from utils.HelperFunctions import Output, FileOperations, Imaging
 
 if __name__ == "__main__":
     try:
@@ -24,14 +22,7 @@ if __name__ == "__main__":
         CreateTemplate.all_subjects(subjects=subjects2analyse, output_dir=FILEDIR)
 
     imaging, fileID = PreprocessT1MRI.create_list_of_subjects(subjects=subjects2analyse)
-    preprocessed_data = PreprocessT1MRI.preprocessMRIbatch(imaging=imaging,
-                                                           template_sequence=group_template,
-                                                           fileID=fileID)
-    # Skull strip at this point here
-    BrainExtraction.AntsPyX().extract_list_of_patients(subjects=subjects2analyse, template=group_template)
 
+    PreprocessT1MRI.preprocessMRIbatch(imaging=imaging, template_sequence=group_template, fileID=fileID)
 
-
-    # BiasFieldCorrection.Correction().N4BiasSeq(subjects=subjects2analyse)
-    # Normalization.Registration().RegisterSeq(subjects=subjects2analyse)
-
+    # Atropos pipeline/routine at this point here needed!
