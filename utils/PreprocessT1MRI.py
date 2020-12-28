@@ -37,7 +37,7 @@ def create_list_of_subjects(subjects):
 
     all_processed_files = FileOperations.list_files_in_folder(f"{FILEDIR}" + 'preprocessed',
                                                               contains=subjects, suffix='nii.gz')
-    regexp = '(T_template0tANAT).(\d{4}\w).*(MDEFT3DWarpedToTemplate.nii.gz)' # TODO: make the regular expression more generic, as there may be 0,1 or 2 digits between '3D' and 'WarpedToTemplate
+    regexp = '(T_template0tANAT).(\d{4}\w).*(MDEFT3D[0-9]*WarpedToTemplate.nii.gz)'
     if all_processed_files:
         all_processed_files = [re.search(regexp, x)[2] for x in all_processed_files]
 
