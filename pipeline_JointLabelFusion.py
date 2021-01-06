@@ -40,7 +40,7 @@ def split_runs(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-def run_jlf(atlas_directory, template_image, debug=True):
+def run_jlf(atlas_directory, template_image, debug=False):
     if not os.path.exists(atlas_directory):
         FileOperations.create_folder(atlas_directory)
 
