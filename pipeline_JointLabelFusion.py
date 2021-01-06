@@ -22,21 +22,17 @@ def create_filenames(no_of_files, prefix, suffix1, suffix2, label_name):
     return fID
 
 
-def relabel_atlases(label_orig, list_of_regions, no_regions=''):
+def relabel_atlases(label_orig, list_of_regions, all_labels):
     """ANTsPy crashes, when there are too many labels so this part re-labels the atlases; it is also possible to
     relabel the data, so that a list may be returned which facilitates labeling back after joint_label_fusion"""
 
-    if not no_regions:
-        no_regions = len(label_orig)
-
-    transforms = []
     iter_label = 0
-    for k in list_of_regions:
-        label_orig[label_orig == k] = k if iter_label < no_regions else 0  # option to check memory issues
-        transforms.append(tuple((k, iter_label)))
-        iter_label += 1
+    for k in all_labels:
+        if k not in list_of_regions:
+            label_orig[label_orig == k] = 0
+    # iter_label += 1
 
-    return label_orig, transforms
+    return label_orig
 
 
 def split_runs(a, n):
@@ -110,15 +106,15 @@ def run_jlf(atlas_directory, template_image, debug=True):
     targetMask = targetMask.morphology(operation='dilate', radius=3)
     ants.plot(targetImage, targetMask, overlay_cmap="jet", overlay_alpha=0.4)
 
-    runs_list = split_runs(np.unique(labels[1].numpy()), math.ceil(len(np.unique(labels[1].numpy()))/20))
+    all_labels = np.unique(labels[0].numpy())
+    runs_list = split_runs(all_labels, math.ceil(len(all_labels)/20))  # necessary to avoid memory problems
     for idx_run, runs in enumerate(runs_list):
-        print(runs)
-        tup, labels_renamed = [[None] * len(labels) for _ in range(2)]
+        labels_renamed = [None] * len(labels)
         for idx in range(len(labels)):
             labels_renamed[idx] = ants.image_clone(labels[idx])
             print("\n{}\nPre-Processing {}; {} of {}:\t\tRe-labeling images".format('=' * 85, 'labels',
                                                                                     idx + 1, len(labels), '=' * 85))
-            labels_renamed[idx], tup[idx] = relabel_atlases(labels_renamed[idx], np.unique(labels_renamed[idx].numpy()))
+            labels_renamed[idx] = relabel_atlases(labels_renamed[idx], np.unique(np.append(runs, 0)), all_labels)
 
         jlf = ants.joint_label_fusion(target_image=targetImage, target_image_mask=targetMask, atlas_list=atlases,
                                       label_list=labels_renamed, rad=[2] * targetImage.dimension, verbose=True)
