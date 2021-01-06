@@ -36,3 +36,7 @@ preprocess:
     metric: mattes
     registration_method: SyNRA
     resample_spacing: '0.7'
+
+malf:
+  atlas: 'OASIS' #'hamersN30R83'
+  template: 'T_template0.nii.gz'

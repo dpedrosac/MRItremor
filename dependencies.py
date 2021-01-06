@@ -10,4 +10,4 @@ with open(os.path.join(ROOTDIR, 'config.yaml'), 'r') as f:
     CONFIGDATA = yaml.load(f.read(), Loader=yaml.FullLoader)
 
 FILEDIR = CONFIGDATA['folders'][getpass.getuser()]['datpath']
-GITHUB = ''
+GITHUB = []
