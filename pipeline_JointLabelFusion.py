@@ -107,7 +107,7 @@ def run_jlf(atlas_directory, template_image, debug=True):
     ants.plot(targetImage, targetMask, overlay_cmap="jet", overlay_alpha=0.4)
 
     all_labels = np.unique(labels[0].numpy())
-    runs_list = split_runs(all_labels, math.ceil(len(all_labels)/20))  # necessary to avoid memory problems
+    runs_list = list(split_runs(all_labels, math.ceil(len(all_labels)/20)))  # necessary to avoid memory problems
     for idx_run, runs in enumerate(runs_list):
         labels_renamed = [None] * len(labels)
         for idx in range(len(labels)):
@@ -116,9 +116,13 @@ def run_jlf(atlas_directory, template_image, debug=True):
                                                                                     idx + 1, len(labels), '=' * 85))
             labels_renamed[idx] = relabel_atlases(labels_renamed[idx], np.unique(np.append(runs, 0)), all_labels)
 
+        print("\n{}\nRunning JLF for {} labels (run {} of {}):\t\tJointLabelFusion".format('=' * 85, len(np.unique(labels_renamed[0].numpy())),
+                                                                            idx_run + 1, len(runs_list), '=' * 85))
+
         jlf = ants.joint_label_fusion(target_image=targetImage, target_image_mask=targetMask, atlas_list=atlases,
                                       label_list=labels_renamed, rad=[2] * targetImage.dimension, verbose=True)
 
+        directory2save = os.path.join(ROOTDIR, 'data', 'patients', 'probabilityJLF')
         filename_intensities = os.path.join(directory2save, 'intensity_run{}.nii.gz'.format(str(idx_run)))
         ants.image_write(jlf['intensity'], filename=filename_intensities)
 
@@ -126,7 +130,6 @@ def run_jlf(atlas_directory, template_image, debug=True):
         ants.image_write(jlf['segmentation'], filename=filename_segmentation)
 
         for idx, prob_atlas in enumerate(jlf['probabilityimages']):
-            directory2save = os.path.join(ROOTDIR, 'data', 'patients', 'probabilityJLF')
             if not os.path.exists(directory2save):
                 FileOperations.create_folder(directory2save)
 
