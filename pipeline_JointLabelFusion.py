@@ -55,7 +55,7 @@ def run_jlf(atlas_directory, template_image, debug=False):
                                                            antsxnet_cache_directory=antsxnet_cache_directory,
                                                            verbose=True)
     template_mask = ants.threshold_image(template_probability_mask, 0.5, 1, 1, 0)
-    if getpass.getuser() == 'david':
+    if getpass.getuser() == 'kavikaran':
         template_mask = ants.image_clone(template_probability_mask)  # unnecessary except for david's machine
         template_mask[template_mask >= 0] = 0
         template_mask[template_probability_mask > .5] = 1
