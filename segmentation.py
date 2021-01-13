@@ -15,6 +15,9 @@ def get_preprocessed_image():
 
 
 OUTPUT_FOLDER = os.path.join(FILEDIR, 'seg_output')
+PRIOR_TEMPLATE = os.path.join(ROOTDIR, 'data', 'template', 'prior1.nii.gz')
+
+print(PRIOR_TEMPLATE)
 
 
 def do_seg(image_path):
@@ -32,7 +35,12 @@ def do_seg(image_path):
     start_time = time.time()
     print("Starting segmentation...")
 
-    segs = ants.atropos(a=img, x=mask, c='[2,0]', m='[0.2, 1x1x1]', i='kmeans[3]')
+    segs = ants.atropos(a=img,
+                        x=mask,
+                        c='[2,0]',
+                        m='[0.2, 1x1x1]',
+                        i='kmeans[3]',
+                        p=PRIOR_TEMPLATE)
 
     print("Segmentation done in", "%.2f seconds" % (time.time() - start_time))
 
