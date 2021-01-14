@@ -3,12 +3,9 @@
 
 import os
 import re
-import time
 import subprocess
 import ants
 import antspynet
-import sys
-from contextlib import contextmanager
 import getpass
 
 from utils.HelperFunctions import FileOperations
@@ -38,6 +35,7 @@ def create_mask(imaging, fileID, cleanup=2):
         if os.path.isfile(filename_save):
             mask = ants.get_mask(image, cleanup=cleanup)
             ants.image_write(mask, filename=filename_save)
+
 
 def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 1x1x1]', i='kmeans[6]',
                         prior='Socrates[0]', verbose=True):
@@ -74,7 +72,7 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
 
         # =================     Atropos segmentation wth given priors     =================
         image = ants.image_read(os.path.join(preprocessed_folder, image)) if isinstance(image, str) else image
-        mask = ants.get_mask(image)
+        mask = ants.get_mask(image) # replace this part with ants.read_image
 
         mask = antspynet.brain_extraction(image,antsxnet_cache_directory=antsxnet_cache_directory, verbose=verbose)
 
