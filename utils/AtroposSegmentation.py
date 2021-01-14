@@ -28,12 +28,14 @@ def preprocessed_subjects(folder):
 
 
 def create_mask(imaging, fileID, cleanup=2):
-    """as threshold_image and therefore get_mask are not working, here is a function emulating the cleanup-option"""
+    """separate function to create masks which can be loaded in computrs with problem at masking images"""
+    imaging_folder = os.path.join(ROOTDIR, FILEDIR, 'preprocessed')
+    masks_folder = os.path.join(ROOTDIR, FILEDIR, 'masks')
 
     for idx, image in enumerate(imaging):
-        filename_save = os.path.join(ROOTDIR, FILEDIR, 'preprocessed', 'mask' + fileID[idx] + '.nii.gz')
-        if os.path.isfile(filename_save):
-            mask = ants.get_mask(image, cleanup=cleanup)
+        filename_save = os.path.join(masks_folder, 'mask' + fileID[idx] + '.nii.gz')
+        if not os.path.isfile(filename_save):
+            mask = ants.get_mask(ants.image_read(os.path.join(imaging_folder, image)), cleanup=cleanup)
             ants.image_write(mask, filename=filename_save)
 
 
@@ -44,6 +46,7 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
     # =================     General steps during processing     =================
     antsxnet_cache_directory = "ANTsXNet"
     preprocessed_folder = os.path.join(ROOTDIR, FILEDIR, 'preprocessed')
+    masks_folder = os.path.join(ROOTDIR, FILEDIR, 'masks')
     output_folder = os.path.join(ROOTDIR, FILEDIR, 'seg_output')
 
     if not os.path.exists(output_folder):
@@ -62,31 +65,31 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
                                                            antsxnet_cache_directory=antsxnet_cache_directory,
                                                            verbose=verbose)
     template_mask = ants.threshold_image(template_probability_mask, 0.5, 1, 1, 0)
-    if getpass.getuser() == 'david' or getpass.getuser() == 'dplab':
+    if getpass.getuser() == 'david':
         template_mask = ants.image_clone(template_probability_mask)  # unnecessary except for david's machine
         template_mask = template_mask > .5
-    template_brain_image = template_mask * template_image
+    template_brain_mask = template_mask * template_image
 
     for idx, image in enumerate(imaging):
         print("\n{}\nProcessing image {} ( out of {} )\n{}".format('=' * 85, idx + 1, len(imaging), '=' * 85))
 
         # =================     Atropos segmentation wth given priors     =================
         image = ants.image_read(os.path.join(preprocessed_folder, image)) if isinstance(image, str) else image
-        mask = ants.get_mask(image) # replace this part with ants.read_image
+        if getpass.getuser() == 'david':
+            mask = ants.image_read(os.path.join(masks_folder, fileID[idx] + 'nii.gz'))
+            # unnecessary except for david's machine
+        else:
+            mask = ants.get_mask(image)  # replace this part with ants.read_image
 
-        mask = antspynet.brain_extraction(image,antsxnet_cache_directory=antsxnet_cache_directory, verbose=verbose)
-
-
-        subprocess.check_call("~/ANTs/bin/ThresholdImage %d %s %s %s %d %d %d" % (3, os.path.join(preprocessed_folder, imaging[0]),
-                                                                     'Thresh-test.nii.gz', str(.5), 1, 1, 0), shell=True)
-        image_mask = ants.image_clone(mask)
-        image_mask = image_mask > .5
-
-        # template_brain_image = mask * image
-
-        mask = ants.get_mask(image)
         if PRIOR_TEMPLATE:
-            segs = ants.atropos(a=image, x=mask, c=c, m=m, i=i, p=prior)
+            segs1 = ants.atropos(a=image, x=mask, c=c, m=m, i=i, p=prior)
+            segs2 = ants.atropos(a=image, x=mask, c=c, m=m, i=i,
+                                 p=os.path.join(ROOTDIR, FILEDIR, 'template_finishedPriors',
+                                                'prior%02d.nii.gz'))
+            priors = 'priorProbabilityImages[6,{},0.5]'.format(os.path.join(ROOTDIR, FILEDIR,
+                                                                             'template_finishedPriors',
+                                                                             'prior%01d.nii.gz'))
+            segs3 = ants.atropos(a=image, x=mask, c=c, m=m, i=priors, p='Socrates[1]', v=1)
         else:
             segs = ants.atropos(a=image, x=mask, c=c, m=m, i=i)
 
