@@ -39,4 +39,4 @@ preprocess:
 
 malf:
   atlas: 'OASIS' #'hamersN30R83'
-  template: 'T_template0.nii.gz'
+  template: 'group_template.nii.gz'

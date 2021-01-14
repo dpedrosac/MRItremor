@@ -6,8 +6,6 @@ import re
 import time
 import ants
 import antspynet
-import sys
-from contextlib import contextmanager
 import getpass
 
 from utils.HelperFunctions import FileOperations
@@ -18,8 +16,9 @@ def create_list_of_subjects(subjects):
     """Creates a list of subjects used to preprocess data according to the proposed pipeline in ANTsPyNet
     cf. https://github.com/ANTsX/ANTsPyNet/blob/master/antspynet/utilities/cortical_thickness.py"""
 
+    FILEDIR_pat = os.path.join(FILEDIR, 'patients')
     print("\n{}\nFile Preparation:\t\textracting filenames.\n{}".format('=' * 85, '=' * 85))
-    allfiles = FileOperations.get_filelist_as_tuple(f"{FILEDIR}", subjects, subdir='')
+    allfiles = FileOperations.get_filelist_as_tuple(f"{FILEDIR_pat}", subjects, subdir='')
     strings2exclude = ['bcorr', 'reg_run', '_ep2d', 'bc_', 'diff_', 'reg_']
 
     start_preprocessing = time.time()
@@ -41,7 +40,7 @@ def create_list_of_subjects(subjects):
     if all_processed_files:
         all_processed_files = [re.search(regexp, x)[2] for x in all_processed_files]
 
-    imaging, proc_subj = [[] for _ in range(2)]
+    imaging, proc_subj, fileIDnew = [[] for _ in range(3)]
     new_dict = {'t1': list_of_files['t1']}
     for idx, fileID in enumerate(list_of_files['t1']):
         if any(fileID[1] in s for s in all_processed_files):
@@ -49,12 +48,13 @@ def create_list_of_subjects(subjects):
             new_dict['t1'] = [(i, j) for i, j in list_of_files['t1'] if j != fileID[1]]
         else:
             imaging.append(ants.image_read(fileID[0]))
+            fileIDnew.append(fileID)
 
-    list_of_files['t1'] = new_dict['t1']
+    # list_of_files['t1'] = new_dict['t1']
     print('\n{}\nFile Preparation: {} imaging file(s) will be processed. {} subjects already finished.\n{}'
           .format('=' * 85, len(subjects) - len(proc_subj), len(proc_subj), '=' * 85))
 
-    return imaging, list_of_files['t1']
+    return imaging, fileIDnew
 
 
 def preprocessMRIbatch(imaging, template_sequence, fileID, truncate_intensity=(.01, .99), return_bias_field=True, verbose=True):
@@ -86,10 +86,10 @@ def preprocessMRIbatch(imaging, template_sequence, fileID, truncate_intensity=(.
     template_probability_mask = antspynet.brain_extraction(template_image,
                                                            antsxnet_cache_directory=antsxnet_cache_directory,
                                                            verbose=verbose)
-    template_mask = ants.threshold_image(template_probability_mask, 0.5, 1, 1, 0)
+    template_mask = ants.threshold_image(template_probability_mask, "0.6", "1", 1, 0)
     if getpass.getuser() == 'david':
         template_mask = ants.image_clone(template_probability_mask)  # unnecessary except for david's machine
-        template_mask = template_mask > .75
+        template_mask = template_mask > .5
     template_brain_image = template_mask * template_image
 
     for idx, image in enumerate(imaging):
@@ -110,9 +110,9 @@ def preprocessMRIbatch(imaging, template_sequence, fileID, truncate_intensity=(.
                                                       antsxnet_cache_directory=antsxnet_cache_directory,
                                                       verbose=verbose)
         mask = ants.threshold_image(probability_mask, 0.5, 1, 1, 0)
-        if getpass.getuser() == 'david':
-            mask = ants.image_clone(probability_mask) # unnecessary except for david's machine
-            mask = mask > .75
+        if getpass.getuser() == 'david' or getpass.getuser() == 'dplab':
+            mask = ants.image_clone(probability_mask)  # unnecessary except for david's machine
+            mask = mask > .5
         preprocessed_brain_image = preprocessed_image * mask
 
         # =====================================     Registration to SST     =====================================
@@ -135,7 +135,7 @@ def preprocessMRIbatch(imaging, template_sequence, fileID, truncate_intensity=(.
                                          type_of_transform="antsRegistrationSyNQuick[a]", #"SyNRA", #"antsRegistrationSyNQuick[a]",
                                          verbose=verbose)
 
-        preprocessed_image = ants.apply_transforms(fixed=template_image, moving=preprocessed_image,
+        preprocessed_image = ants.apply_transforms(fixed=template_image, moving=preprocessed_brain_image,
                                                    transformlist=registration['fwdtransforms'], interpolator="linear",
                                                    verbose=verbose)
         mask = ants.apply_transforms(fixed=template_image, moving=mask,
