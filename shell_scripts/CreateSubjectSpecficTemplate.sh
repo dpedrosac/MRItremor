@@ -1,7 +1,7 @@
 #!/bin/bash
 # this script intends to create a subject specific template (SST) which is intended to be used for all other steps
 # for this purpose, ANTs should be built from the source code, as described here:
-# https://github.com/ANTsX/ANTs/wiki/Compiling-ANTs-on-Linux-and-Mac-OS and folders MUST be adapted (ANTSPATH, INPUT_DIR)
+# https://github.com/ANTsX/ANTs/wiki/Compiling-ANTs-on-Linux-and-Mac-OS and folders MUST be adapted (ANTSPATH, INPUT_DIR, sequence-name for input)
 
 export ANTSPATH=~/ANTs/bin/
 export PATH=${ANTSPATH}:$PATH
