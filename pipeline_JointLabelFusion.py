@@ -44,6 +44,10 @@ def run_jlf(atlas_directory, template_image, debug=False):
     if not os.path.exists(atlas_directory):
         FileOperations.create_folder(atlas_directory)
 
+    atlas_registration_folder = os.path.join(ROOTDIR, 'data', 'patients', 'registrationAtlases')
+    if not os.path.exists(atlas_registration_folder):
+        FileOperations.create_folder(atlas_registration_folder)
+
     if not os.listdir(atlas_directory):
         print('No atlases were found, please make sure to add atlas with corresponding segmentation'
               'to folder {}'.format(atlas_directory))
@@ -88,26 +92,39 @@ def run_jlf(atlas_directory, template_image, debug=False):
         label = ants.image_read(os.path.join(atlas_directory, label_individual))
         label = atlas_mask * label
 
-        print("\n{}\nRegistering {}; atlas {} of {}:\t\tRegistering".format('=' * 85, atlas_individual,
-                                                                            idx + 1, len(atlases), '=' * 85))
+        filename_registration = os.path.join(atlas_registration_folder,
+                                             'AffineMatrix_' + atlas_individual.split('.nii.gz')[0] + '.mat')
+        if not os.path.isfile(os.path.join(atlas_registration_folder, filename_registration)):
+            print("\n{}\nRegistering {}; atlas {} of {}:\t\tRegistering".format('=' * 85, atlas_individual,
+                                                                                idx + 1, len(atlases), '=' * 85))
 
-        registration = ants.registration(fixed=targetImage,
-                                         moving=ants.iMath(atlas, operation='Normalize'),  # Normalize
-                                         type_of_transform="SyNRA",  # "SyNRA", #"antsRegistrationSyNQuick[a]",
-                                         verbose=True)
+            registration = ants.registration(fixed=targetImage,
+                                             moving=ants.iMath(atlas, operation='Normalize'),  # Normalize
+                                             type_of_transform="SyNRA",  # "SyNRA", #"antsRegistrationSyNQuick[a]",
+                                             verbose=True)
+            AffMatrix = ants.read_transform(registration['fwdtransforms'][1])
+            ants.write_transform(AffMatrix, filename=filename_registration)
+
+            #            atlases[idx] = ants.apply_transforms(fixed=targetImage, moving=ants.iMath(atlas, operation='Normalize'),
+            #                                                 transformlist=registration['fwdtransforms'])
+
+            #            labels[idx] = ants.apply_transforms(fixed=targetImage, moving=label,
+            #                                                transformlist=registration['fwdtransforms'],
+            #                                                interpolator='genericLabel')
         atlases[idx] = ants.apply_transforms(fixed=targetImage, moving=ants.iMath(atlas, operation='Normalize'),
-                                             transformlist=registration['fwdtransforms'])
+                                                 transformlist=filename_registration)
 
         labels[idx] = ants.apply_transforms(fixed=targetImage, moving=label,
-                                            transformlist=registration['fwdtransforms'],
-                                            interpolator='genericLabel')
+                                                transformlist=filename_registration,
+                                                interpolator='genericLabel')
+
         targetMask[labels[idx] != 0] = 1
 
     targetMask = targetMask.morphology(operation='dilate', radius=3)
     ants.plot(targetImage, targetMask, overlay_cmap="jet", overlay_alpha=0.4)
 
     all_labels = np.unique(labels[0].numpy())
-    runs_list = list(split_runs(all_labels, math.ceil(len(all_labels)/20)))  # necessary to avoid memory problems
+    runs_list = list(split_runs(all_labels, math.ceil(len(all_labels)/10)))  # necessary to avoid memory problems
     for idx_run, runs in enumerate(runs_list):
         labels_renamed = [None] * len(labels)
         for idx in range(len(labels)):
@@ -117,7 +134,7 @@ def run_jlf(atlas_directory, template_image, debug=False):
             labels_renamed[idx] = relabel_atlases(labels_renamed[idx], np.unique(np.append(runs, 0)), all_labels)
 
         print("\n{}\nRunning JLF for {} labels (run {} of {}):\t\tJointLabelFusion".format('=' * 85, len(np.unique(labels_renamed[0].numpy())),
-                                                                            idx_run + 1, len(runs_list), '=' * 85))
+                                                                                           idx_run + 1, len(runs_list), '=' * 85))
 
         jlf = ants.joint_label_fusion(target_image=targetImage, target_image_mask=targetMask, atlas_list=atlases,
                                       label_list=labels_renamed, rad=[2] * targetImage.dimension, verbose=True)

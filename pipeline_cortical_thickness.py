@@ -18,8 +18,8 @@ if __name__ == "__main__":
     # Get files ready to analyse using the functions in the HelperFunctions.py module
     # subjects2analyse = list(FileOperations.list_folders(os.path.join(ROOTDIR, FILEDIR, 'patients'), prefix='[\d+]'))
     group_template = os.path.join(ROOTDIR, FILEDIR, 'group_template.nii.gz')
-    if not os.path.isfile(group_template):
-         CreateTemplate.all_subjects(subjects=subjects2analyse, output_dir=FILEDIR)
+    # if not os.path.isfile(group_template):
+    #     CreateTemplate.all_subjects(subjects=subjects2analyse, output_dir=FILEDIR)
 
     # imaging, fileID = PreprocessT1MRI.create_list_of_subjects(subjects=subjects2analyse)
     # PreprocessT1MRI.preprocessMRIbatch(imaging=imaging, template_sequence=group_template, fileID=fileID)

@@ -76,22 +76,34 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
         # =================     Atropos segmentation wth given priors     =================
         image = ants.image_read(os.path.join(preprocessed_folder, image)) if isinstance(image, str) else image
         if getpass.getuser() == 'david':
-            mask = ants.image_read(os.path.join(masks_folder, fileID[idx] + 'nii.gz'))
+            mask = ants.image_read(os.path.join(masks_folder, 'mask' + fileID[idx] + '.nii.gz'))
             # unnecessary except for david's machine
         else:
             mask = ants.get_mask(image)  # replace this part with ants.read_image
 
         if PRIOR_TEMPLATE:
-            segs1 = ants.atropos(a=image, x=mask, c=c, m=m, i=i, p=prior)
-            segs2 = ants.atropos(a=image, x=mask, c=c, m=m, i=i,
-                                 p=os.path.join(ROOTDIR, FILEDIR, 'template_finishedPriors',
-                                                'prior%02d.nii.gz'))
-            priors = 'priorProbabilityImages[6,{},0.5]'.format(os.path.join(ROOTDIR, FILEDIR,
-                                                                             'template_finishedPriors',
-                                                                             'prior%01d.nii.gz'))
-            segs3 = ants.atropos(a=image, x=mask, c=c, m=m, i=priors, p='Socrates[1]', v=1)
+            segs = ants.atropos(a=image, x=mask, c=c, m=m, i=i) #,
+                                # p=os.path.join(ROOTDIR, 'data', 'cookedPriors',
+                                #                 'prior%01d.nii.gz'), v=1)
+            # priors = 'priorProbabilityImages[6,{},0.5]'.format(os.path.join(ROOTDIR, 'data',
+            #                                                                'cookedPriors',
+            #                                                                'prior%01d.nii.gz'))
+            # segs2 = ants.atropos(a=image, x=mask, c=c, m=m, i=priors, p='Socrates[0]', v=1)
         else:
             segs = ants.atropos(a=image, x=mask, c=c, m=m, i=i)
+
+        kk_segmentation = segs['segmentation']
+        kk_segmentation[kk_segmentation == 4] = 3
+        kk_gray_matter = segs['probabilityimages'][2]
+        kk_white_matter = segs['probabilityimages'][3] + segs['probabilityimages'][4]
+        kk = ants.kelly_kapowski(s=kk_segmentation, g=kk_gray_matter, w=kk_white_matter, its=45, r=0.025, m=1.5, x=0,
+                                 verbose=1)
+
+
+        thickimg = ants.kelly_kapowski(s=segs['segmentation'],
+                                       g=segs['probabilityimages'][1],
+                                       w=segs['probabilityimages'][2],
+                                       its=45, r=0.5, m=1)
 
         filename2save = 'xxx' + '' + 'WarpedToTemplate.nii.gz'
         ants.image_write(segs, os.path.join(output_folder, filename2save))
