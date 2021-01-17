@@ -8,10 +8,21 @@ export PATH=${ANTSPATH}:$PATH
 
 CURRENT_DIR=${PWD}
 INPUT_DIR=${PWD}/raw_data/
+OUTPUT_DIR=${PWD}/template/
+
+if [[ ! -d $OUTPUT_DIR ]];
+  then
+    echo "Output directory \"$OUTPUT_DIR\" does not exist. Creating it."
+    mkdir -p $OUTPUT_DIR
+  fi
+
+echo "---------------------  Creating subject specific template (SST)  ---------------------"
+
+time_start=`date +%s`
 
 ${ANTSPATH}/antsMultivariateTemplateConstruction2.sh \
 	   -d 3 \
-	   -o ${outputPath}SST_MRITremor \
+	   -o ${OUTPUT_DIR}SST_MRITremor \
 	   -i 4 \
 	   -g 0.15\
 	   -c 2 \
@@ -26,3 +37,12 @@ ${ANTSPATH}/antsMultivariateTemplateConstruction2.sh \
 	   -m CC \
 	   -t BSplineSyN[0.1,75,0] \
 	   ${INPUT_PATH}*MDEFT3D.nii.gz > antsCreateSST.txt 2>&1
+
+    time_end_template_creation=`date +%s`
+    time_elapsed_template_creation=$((time_end_template_creation - time_start))
+
+    echo
+    echo "--------------------------------------------------------------------------------------"
+    echo " Done with template creaton:  $(( time_elapsed_template_creation / 3600 ))h $(( time_elapsed_template_creation %3600 / 60 ))m $(( time_elapsed_template_creation % 60 ))s"
+    echo "--------------------------------------------------------------------------------------"
+    echo
