@@ -7,6 +7,7 @@ import subprocess
 import ants
 import antspynet
 import getpass
+import pandas as pds
 
 from utils.HelperFunctions import FileOperations
 from dependencies import ROOTDIR, FILEDIR
@@ -50,7 +51,11 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
     output_folder = os.path.join(ROOTDIR, FILEDIR, 'seg_output')
 
     if not os.path.exists(output_folder):
-        FileOperations.create_folder(f"{FILEDIR}" + 'registrationMatrices')
+        FileOperations.create_folder(output_folder)
+
+    stats_output_folder = os.path.join(ROOTDIR, FILEDIR, 'stats_cortical_thickness')
+    if not os.path.exists(stats_output_folder):
+        FileOperations.create_folder(stats_output_folder)
 
     # Load study specific template (SST) created from all subjects (cf. TemplateCreationParallel.py)
     sst = ants.image_read(template_sequence)
@@ -71,8 +76,9 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
     template_brain_mask = template_mask * template_image
 
     for idx, image in enumerate(imaging):
-        filename2save = 'kk' + fileID[idx] + '.nii.gz'
-        if not os.path.isfile(os.path.join(output_folder, filename2save)):
+        filename_kelly_kapowski = 'kk' + fileID[idx] + '.nii.gz'
+        filename_stats_cortical_thickness = 'stats' + fileID[idx] + '.csv'
+        if not os.path.isfile(os.path.join(output_folder, filename_kelly_kapowski)):
             print("\n{}\nProcessing image {} ({} remaining )\n{}".format('=' * 85, fileID[idx], len(imaging)-idx, '=' * 85))
 
             # =================     Atropos segmentation wth given priors     =================
@@ -100,6 +106,22 @@ def segmentationAtropos(imaging, template_sequence, fileID, c='[2,0]', m='[0.2, 
             kk_white_matter = segs['probabilityimages'][3] + segs['probabilityimages'][4]
             kk = ants.kelly_kapowski(s=kk_segmentation, g=kk_gray_matter, w=kk_white_matter, its=45, r=0.025, m=1.5, x=0,
                                      verbose=1)
+            ants.image_write(kk, os.path.join(output_folder, filename_kelly_kapowski))
 
-            filename2save = 'kk' + fileID[idx] + '.nii.gz'
-            ants.image_write(kk, os.path.join(output_folder, filename2save))
+        else:
+            print("\n{}\nExtracting cortical thickness from image {} ({} remaining )\n{}".format('=' * 85, fileID[idx], len(imaging)-idx, '=' * 85))
+
+            kk = ants.image_read(os.path.join(output_folder, filename_kelly_kapowski))
+            image = ants.image_read(os.path.join(preprocessed_folder, image)) if isinstance(image, str) else image
+
+            dkt = antspynet.desikan_killiany_tourville_labeling(image, do_preprocessing=True, verbose=True)
+            dkt_cortical_mask = ants.threshold_image(dkt, 1000, 3000, 1, 0)
+            dkt = dkt_cortical_mask * dkt
+
+            kk_mask = ants.threshold_image(kk, 0, 0, 0, 1)
+            dkt_propagated = ants.iMath(kk_mask, "PropagateLabelsThroughMask", kk_mask * dkt)
+
+            # Get average regional thickness values
+            kk_regional_stats = ants.label_stats(kk, dkt_propagated)
+            pds.DataFrame(kk_regional_stats).to_csv(os.path.join(stats_output_folder,
+                                                                 filename_stats_cortical_thickness))
