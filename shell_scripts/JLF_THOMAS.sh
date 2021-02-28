@@ -1,3 +1,4 @@
+
 # !/bin/bash
 # this script runs the antsJointLabelFusion.sh script in order to get a majority voting scheme for the regions defined in the multiple atlases
 # to run the script,  The THOMAS atlases for thalamic segmentations should be downloaded, ANTs be built from the source code, as described here:
@@ -6,32 +7,68 @@
 export ANTSPATH=/opt/ANTs/bin/
 export PATH=${ANTSPATH}:$PATH
 
-CURRENT_DIR=${PWD}
-OUTPUT_DIR=${PWD}/JLF_thalamus_wnMPRAGE/
+export FSLPATH=~/usr/local/fsl/
+export PATH=${FSLPATH}:$PATH
 
+
+TMP_DIR=${PWD}/tmp$RANDOM
+mkdir -p ${TMP_DIR}
+mkdir -p ${TMP_DIR}/training-images/
+mkdir -p ${TMP_DIR/}/training-labels/
+
+TEMPLATE_BRAIN=${PWD}/SST/T_template0.nii.gz
+IMG_FOLDER=${PWD}/MALF_templates/THOMAS2020/training-images/
+LABEL_FOLDER=${PWD}/MALF_templates/THOMAS2020/training-labels/
+
+time_start='date +%s'
+
+side=(right left)
+for i in "${side[@]}"; do 
+echo "---------------------  Copying and flipping images for "$i" side   ---------------------"	
+	if [ "$i" == "right" ] ; then
+	WORKING_DIR=${TMP_DIR}
+	fslswapdim ${PWD}/templateThalamus.nii.gz -x y z  ${WORKING_DIR}/templateThalamus.nii.gz
+	OUTPUT_DIR=${PWD}/JLF_thalamus_wnMPRAGE_right/
+	# FILES='ls -1 $IMG_FOLDER | grep bias_corr' #${IMG_FOLDER}/*bias_corr.nii.gz
+	for file in $IMG_FOLDER/*bias_corr.nii.gz; do
+	filename=$(basename -- "$file") 
+	echo "The processed file is:" $filename
+	fslswapdim "$file" -x y z  ${TMP_DIR}/training-images/"$filename"
+	done	
+	
+	for label in $LABEL_FOLDER/*nuclei_atlas.nii.gz; do 
+	labelname=$(basename -- "$label") 
+	fslswapdim "$label" -x y z  ${TMP_DIR}/training-labels/"$labelname"
+	echo "		----------  Changing labels for "$i" side   ----------		"
+	fslmaths ${TMP_DIR}/training-labels/"$labelname" -add 25 ${TMP_DIR}/training-labels/"$labelname"
+	done
+	
+	
+	else
+	echo "running left side now";
+	WORKING_DIR=${PWD}
+	OUTPUT_DIR=${PWD}/JLF_thalamus_wnMPRAGE/
+	IMG=${IMG_FOLDER}
+	IMGLABELS=${LABEL_FOLDER}
+	
+	fi;
+	
 if [[ ! -d $OUTPUT_DIR ]];
   then
     echo "Output directory \"$OUTPUT_DIR\" does not exist. Creating it."
     mkdir -p $OUTPUT_DIR
-  fi
-
-TEMPLATE_BRAIN=${CURRENT_DIR}/SST/T_template0.nii.gz #${PWD}/templateThalamus.nii.gz
-TEMPLATE_MASK =${CURRENT_DIR}/SST/T_template0BrainExtractionMask.nii.gz
-IMG=${PWD}/MALF_templates/THOMAS2020/training-images/
-IMGLABELS=${PWD}/MALF_templates/THOMAS2020/training-labels/
+	fi
 
 echo "---------------------  Register thalamic template to SST   ---------------------"
 ${ANTSPATH}antsRegistrationSyNQuick.sh -d 3 \
- -f ${PWD}/templateThalamus.nii.gz \
+ -f ${WORKING_DIR}/templateThalamus.nii.gz \
  -m $TEMPLATE_BRAIN \
  -o ${OUTPUT_DIR}/WarpedTemplate2WMnMPRAGE_ \
  -t a \
  -j 1
 
-WARPED_TEMPLATE_BRAIN=${OUTPUT_DIR}/WarpedTemplate2WMnMPRAGE_InverseWarped.nii.gz
-
 echo "---------------------  Running Joint Label Fusion  ---------------------"
-time_start=`date +%s`
+WARPED_TEMPLATE_BRAIN=${OUTPUT_DIR}/WarpedTemplate2WMnMPRAGE_InverseWarped.nii.gz
 
 ${ANTSPATH}antsJointLabelFusion.sh -d 3  -k 1 \
  -c 2 -j 2 \
@@ -63,12 +100,13 @@ ${ANTSPATH}antsJointLabelFusion.sh -d 3  -k 1 \
 -g ${IMG}ms10-WMnMPRAGE_bias_corr.nii.gz -l ${IMGLABELS}ms10-Thomas-12_nuclei_atlas.nii.gz \
 -g ${IMG}ms11-WMnMPRAGE_bias_corr.nii.gz -l ${IMGLABELS}ms11-Thomas-12_nuclei_atlas.nii.gz
 
+done
 
 time_end_jlfscript=`date +%s`
 time_elapsed_jlf_script=$((time_end_jlfscript - time_start))
 
 echo
 echo "--------------------------------------------------------------------------------------"
-echo " Done with joint label fusion:  $(( time_elapsed_template_creation / 3600 ))h $(( time_elapsed_template_creation %3600 / 60 ))m $(( time_elapsed_template_creation % 60 ))s"
+echo " Done with joint label fusion for both sides:  $(( time_elapsed_template_creation / 3600 ))h $(( time_elapsed_template_creation %3600 / 60 ))m $(( time_elapsed_template_creation % 60 ))s"
 echo "--------------------------------------------------------------------------------------"
 echo
