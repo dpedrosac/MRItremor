@@ -11,32 +11,32 @@ INPUT_DIR=${PWD}/raw_data/
 OUTPUT_DIR=${PWD}/template/
 
 if [[ ! -d $OUTPUT_DIR ]];
-  then
-    echo "Output directory \"$OUTPUT_DIR\" does not exist. Creating it."
-    mkdir -p $OUTPUT_DIR
-  fi
+then
+	echo "Output directory \"$OUTPUT_DIR\" does not exist. Creating it."
+	mkdir -p $OUTPUT_DIR
+fi
 
 echo "---------------------  Creating subject specific template (SST)  ---------------------"
 
 time_start=`date +%s`
 
 ${ANTSPATH}/antsMultivariateTemplateConstruction2.sh \
-	   -d 3 \
-	   -o ${OUTPUT_DIR}SST_MRITremor \
-	   -i 4 \
-	   -g 0.15\
-	   -c 2 \
-	   -k 1 \
-	   -w 1 \
-	   -f 8x4x2x1 \
-	   -s 3x2x1x0 \
-	   -q 100x70x50x10 \
-	   -n 1 \
-	   -r 1 \
-	   -j 3 \
-	   -m CC \
-	   -t BSplineSyN[0.1,75,0] \
-	   ${INPUT_PATH}*MDEFT3D.nii.gz > antsCreateSST.txt 2>&1
+-d 3 \
+-o ${OUTPUT_DIR}SST_MRITremor \
+-i 4 \
+-g 0.15\
+-c 2 \
+-k 1 \
+-w 1 \
+-f 8x4x2x1 \
+-s 3x2x1x0 \
+-q 100x70x50x10 \
+-n 1 \
+-r 1 \
+-j 3 \
+-m CC \
+-t BSplineSyN[0.1,75,0] \
+${INPUT_PATH}*MDEFT3D.nii.gz > antsCreateSST.txt 2>&1
 
 time_end_template_creation=`date +%s`
 time_elapsed_template_creation=$((time_end_template_creation - time_start))
