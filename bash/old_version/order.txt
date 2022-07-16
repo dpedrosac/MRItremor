@@ -1,0 +1,5 @@
+1. fslmergeandsplit.sh
+
+2. bet.sh then visual checks
+
+3. fsleddycuda.sh then visual checks
