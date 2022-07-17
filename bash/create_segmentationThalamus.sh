@@ -95,15 +95,22 @@ echo
 function_cerebellumextract() # function to merge all independent dwi sequences to one
 {
 	while IFS=$'\t' read -r number name color ; do
-		mri_binarize \
-		--i $2/mri/Warped_Cerebellar_Atlas.nii \
-		--o $2/mri/${name}.mgz \
-		--match "$number"
-		mri_convert \
-		--in_type mgz \
-		--out_type nii \
-		$2/mri/${name}.mgz $2/mri/${name}.nii.gz
-		echo "======================================================================"
+		FILE=/$2/mri/${name}.nii.gz
+		if [ -f "$FILE" ]; then
+			echo "... subj: $2 already processed!"
+			echo
+			echo "======================================================================"
+		else 
+			mri_binarize \
+			--i $2/mri/Warped_Cerebellar_Atlas.nii \
+			--o $2/mri/${name}.mgz \
+			--match "$number"
+			mri_convert \
+			--in_type mgz \
+			--out_type nii \
+			$2/mri/${name}.mgz $2/mri/${name}.nii.gz
+			echo "======================================================================"
+		fi
 	done < $1/CerebellarAtlas/Diedrichsen_2009/atl-Anatom.tsv
 }
 
@@ -141,7 +148,7 @@ for_each -nthreads 10 ./freesurfer/* : tckgen -act ${CURRENT_DIR}/rawdata/NAME/5
 -maxlength 250 \
 -cutoff 0.06 \
 -nthreads 4 \
--select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Right_VLp.tck -force
+-select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Right_VLp.tck
 
 echo " ... part 3 (Cerebellum) "
 
@@ -150,7 +157,7 @@ for_each -nthreads 10 ./freesurfer/* : tckgen -act ${CURRENT_DIR}/rawdata/NAME/5
 -maxlength 250 \
 -cutoff 0.06 \
 -nthreads 4 \
--select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Left_Dentate.tck -force
+-select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Left_Dentate.tck
 
 echo " ... part 4 (Cerebellum) "
 
@@ -159,7 +166,7 @@ for_each -nthreads 10 ./freesurfer/* : tckgen -act ${CURRENT_DIR}/rawdata/NAME/5
 -maxlength 250 \
 -cutoff 0.06 \
 -nthreads 4 \
--select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Right_Dentate.tck -force
+-select 10000000 ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif ${CURRENT_DIR}/rawdata/NAME/tracks_10M_Right_Dentate.tck
 
 echo
 echo "Done!"
@@ -171,7 +178,7 @@ echo "======================================================================"
 echo " Concatenating all Tracts for all subjects ... "
 echo
 
-for_each -t -nthreads 20 ./freesurfer/* : tckedit ${CURRENT_DIR}/rawdata/NAME/*.tck ${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck
+for_each -t -nthreads 20 ./rawdata/* : tckedit ${CURRENT_DIR}/rawdata/NAME/*.tck ${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck
 
 echo
 echo "Done!"
@@ -183,8 +190,11 @@ echo "======================================================================"
 echo " Running tcksift2 for all subjects ... "
 echo
 
-for_each -t -nthreads 20 ./freesurfer/* : tcksift2 -act ${CURRENT_DIR}/rawdata/NAME/5tt_coreg.mif \
--out_mu ${CURRENT_DIR}/rawdata/NAME/sift2_mu.txt ${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif 
+for_each -t -nthreads 10 ./freesurfer/* : tcksift2 -act ${CURRENT_DIR}/rawdata/NAME/5tt_coreg.mif \
+-out_mu ${CURRENT_DIR}/rawdata/NAME/sift2_mu.txt \
+-out_coeffs ${CURRENT_DIR}/rawdata/NAME/sift_coeffs.txt \
+-nthreads 4 \
+${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck ${CURRENT_DIR}/rawdata/NAME/wmfod_norm.mif \
 ${CURRENT_DIR}/rawdata/NAME/sift_all.txt
 
 echo
@@ -192,17 +202,25 @@ echo "Done!"
 echo "======================================================================"
 echo
 
+
 echo
 echo "======================================================================"
 echo " Creating connectome for all subjects ... "
 echo
 
-for_each -t -nthreads 20 ./freesurfer/* : tck2connectome ${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck \
-${CURRENT_DIR}/rawdata/NAME/CONN_parcels.mif \
+for_each -t -nthreads 10 ./freesurfer/* : tck2connectome \${CURRENT_DIR}/rawdata/NAME/tracts_all_concat.tck \
+-tck_weights_in ${CURRENT_DIR}/rawdata/NAME/CONN_parcels.mif \
 ${CURRENT_DIR}/rawdata/NAME/CONN_parcels.csv \
 $PP_DIR/connectome_sift2_vta_${vta}.csv \
+-symmetric \
+-zero_diagonal \
+-scale_invnodevol \
+-nthreads 4 \
 -tck_weights_in ${CURRENT_DIR}/rawdata/NAME/sift_all.txt \
 -out_assignment ${CURRENT_DIR}/rawdata/NAME/assignments_CONN_parcels.csv;
+
+
+tck2connectome -symmetric -zero_diagonal -scale_invnodevol -tck_weights_in sift_1M.txt tracks_10M.tck sub-CON02_parcels.mif sub-CON02_parcels.csv -out_assignment assignments_sub-CON02_parcels.csv
 
 
 echo
