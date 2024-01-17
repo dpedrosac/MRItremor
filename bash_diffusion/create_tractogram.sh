@@ -1,7 +1,7 @@
 #!/bin/bash
 # author: David Pedrosa
 # version: 2022-16-07, modified 2022-28-10 # fine-tuning of code
-# script creating tractogram for all subjects after preprocessing using 
+# script creating entire tractogram for all subjects after preprocessing using 
 # the MRITRIX3 pipeline (cf. ./bash/preprocess_pipeline.sh)
 # cf. https://www.youtube.com/channel/UCh9KmApDY_z_Zom3x9xrEQw
 
@@ -10,7 +10,8 @@ CURRENT_DIR=${PWD}
 PARAMETER_DIR=${PWD}/bash/ # all settings for eddy are stored here
 export FREESURFER_HOME=/opt/freesurfer
 source $FREESURFER_HOME/SetUpFreeSurfer.sh
-SUBJECTS_DIR=/media/exthd3/freesurferNew/
+SUBJECTS_DIR=/media/exthd3/freesurfer/
+
 if [[ ! -d $SUBJECTS_DIR ]]; # create folder if not present
 then
 	mkdir -p $SUBJECTS_DIR
@@ -62,8 +63,7 @@ echo
 echo "======================================================================"
 echo " Running recon-all for all subjects ... "
 echo
-# for_each -nthreads 40 ./rawdata/{3011S,4699S,4723S,4858S} : recon-all -i IN/*MDEFT*.nii.gz \
-#-s PRE -all
+for_each -nthreads 40 ./rawdata/* : recon-all -i IN/*MDEFT*.nii.gz -s PRE -all # {3011S,4699S,4723S,4858S}
 echo
 echo "Done!"
 echo "======================================================================"
