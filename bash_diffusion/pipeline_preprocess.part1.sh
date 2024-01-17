@@ -1,22 +1,24 @@
 #!/bin/bash
 # author: David Pedrosa
-# version: 2022-19-10, $modification: added registration of DWI data to T1, revomed redundancy
-# this script runs all the preprocessing steps for the MRTRIX3 pipeline
+# version: 2024-01-10, $modification: streamlined the code
+# This script runs all the preprocessing steps for the MRTRIX3 pipeline.
 # cf. https://www.youtube.com/channel/UCh9KmApDY_z_Zom3x9xrEQw
 
 CURRENT_DIR=${PWD}
-PARAMETER_DIR=${PWD}/bash/ # all settings for eddy are stored hree
+PARAMETER_DIR=${PWD}/bash/ # all scripts and settings should be stored here
+FLAG_CHECK="FALSE"
 
-function_fslmerge() # function to merge all independent dwi sequences to one
-{
-	ls $1/*diff*.nii.gz
-	echo "======================================================================"
-	fslmerge -a $1/diff_complete.nii.gz  $1/*diff*.nii.gz							# merges all DWI sequences to one file
-}
-
+# Merge all independent DWI sequences to one
 echo "================================================================"
 echo "1. Concatenate images from nifti-output"
 echo
+
+function fslmerge_dwi() {
+    ls "$1"/*diff*.nii.gz
+    echo "======================================================================"
+    fslmerge -a "$1/diff_complete.nii.gz" "$1"/*diff*.nii.gz
+}
+
 
 num_processes=5
 for WORKING_DIR in ${PWD}/rawdata/*     # list directories in the form "/tmp/dirname/"
@@ -28,7 +30,7 @@ do
 	echo
 
 	echo "Processing subj: ${WORKING_DIR##*/}"
-	# function_fslmerge ${WORKING_DIR} ${PARAMETER_DIR} ${CURRENT_DIR} & 
+	 fslmerge_dwi "$WORKING_DIR" & 
 done
 wait
 
@@ -37,12 +39,12 @@ echo
 echo "================================================================"
 
 
+# Add bvec and bval information to merged images and convert to -mif file
 echo "================================================================"
 echo "2. Convert images to mif-format and add (bvecs/bvals) information"
 echo
 
-function_mrconvert() # function to merge all independent dwi sequences to one
-{
+function mrconvert_dwi() {
 	echo "======================================================================"
 	mrconvert $1/diff_complete.nii.gz -fslgrad $3/params/ep2d_diff_rolled.bvecs $3/params/ep2d_diff_rolled.bvals $1/dwi_raw.mif # -force
 }
@@ -61,7 +63,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_mrconvert ${WORKING_DIR} ${PARAMETER_DIR} ${CURRENT_DIR} & 
+		mrconvert_dwi ${WORKING_DIR} ${PARAMETER_DIR} ${CURRENT_DIR} & 
 	fi
 done
 wait
@@ -71,13 +73,13 @@ echo
 echo "================================================================"
 
 
+# Denoise, degibbs and remove eddy currents 
 echo "================================================================"
 echo "3. Denoise and preprocess data"
 echo
 
-function_mrpreprocess() # function to merge all independent dwi sequences to one
+function mrpreprocess()
 {
-	
 	OUTPUT_DIR=$1/eddy_output/
 	if [[ ! -d $OUTPUT_DIR ]];
 	then
@@ -95,7 +97,7 @@ do
 	((i=i%num_processes)); ((i++==0)) && wait
 	echo "======================================================================"
 	echo
-	echo "Running dwifslpreproc (MRITRIX3) at two cores on $WORKING_DIR:"
+	echo "Running dwifslpreproc (MRITRIX3) at X cores on $WORKING_DIR:"
 	echo
 
 	FILE=/${WORKING_DIR}/dwi_den_unring_eddycorr.mif
@@ -103,7 +105,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_mrpreprocess ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
+		mrpreprocess ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
 	fi
 done
 wait
@@ -113,7 +115,6 @@ echo
 echo "================================================================"
 
 # Sanity check for denoise (should be similar (identical?) to noise.mif):
-FLAG_CHECK="FALSE"
 SUBJ="3011S"
 if [ "$FLAG_CHECK" = "TRUE" ]; then
 	echo "Sanity check for residuals after denoise for subj:"
@@ -122,11 +123,12 @@ if [ "$FLAG_CHECK" = "TRUE" ]; then
 	mrview ./rawdata/${SUBJ}/residual.mif
 fi
 
+# Bias correction for DTI imaging
 echo "================================================================"
 echo "4. Debias data"
 echo
 
-function_debias()
+function debias_DTI()
 {
 	dwibiascorrect ants $1/dwi_den_unring_eddycorr.mif $1/dwi_den_unring_eddycorr_unbiased.mif -bias $1/bias.mif # -force
 }
@@ -145,7 +147,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_debias ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
+		debias_DTI ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
 	fi
 
 done
@@ -156,17 +158,16 @@ echo
 echo "================================================================"
 
 
+# Create a skull-stripped brain from dwi-data; somewhat a relict from prior versions where coreg was performed later
 echo "================================================================"
 echo "5. Create mask for DTI and anatomical data"
 echo
 
-function_mask()  # function to create a skull-stripped brain from the dwi data; somewhat a relict from prior versions wher coreg was performed later
-{
+function create_mask(){
 	dwi2mask $1/dwi_den_unring_eddycorr_unbiased.mif $1/betmask.mif -force
 }
 
-function_mask2() # function to create a skull-stripped brain from the anatomy data
-{
+function create_mask2(){
 	bet $1/T1.nii.gz $1/betT1.nii.gz -f .1 -B
 }
 
@@ -185,7 +186,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_mask ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
+		create_mask ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
 	fi
 
 	FILE=/${WORKING_DIR}/betT1.nii.gz
@@ -193,7 +194,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_mask2 ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
+		create_mask2 ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
 	fi
 done
 wait
@@ -203,20 +204,19 @@ echo
 echo "================================================================"
 
 
-# sanity check for debias:
-FLAG_CHECK="FALSE"
+# sanity check for mask creation:
 SUBJ="3011S"
 if [ "$FLAG_CHECK" = "TRUE" ]; then
 	echo "Sanity check for masks and debiasing results"
 	mrview ./rawdata/${SUBJ}/dwi_den_unring_eddycorr_unbiased.mif -overlay.load ./rawdata/${SUBJ}/betmask.mif
 fi
 
+# Coregister DTI imaging to T1
 echo "================================================================"
 echo "6. Coregisterin DWI to anatomical (T1.nii.gz) imaging"
 echo
 
-function_coregister() # function to merge all independent dwi sequences to one
-{
+function coregister_DTI(){
 	mrconvert $1/dwi_den_unring_eddycorr_unbiased.mif $1/dwi_den_unring_eddycorr_unbiased.nii.gz # -force
 	dwiextract $1/dwi_den_unring_eddycorr_unbiased.mif - -bzero | mrmath - mean $1/mean_b0.mif -axis 3 # -force # extract b0 images
 	mrconvert $1/mean_b0.mif $1/mean_b0.nii.gz
@@ -237,7 +237,7 @@ do
 		echo "... subj: ${WORKING_DIR##*/} already processed!"
 	else 
 		echo "Processing subj: ${WORKING_DIR##*/}"
-		function_coregister ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
+		coregister_DTI ${WORKING_DIR} ${WORKING_DIR##*/} ${CURRENT_DIR} & 
 	fi
 done
 wait
@@ -247,6 +247,7 @@ echo
 echo "================================================================"
 
 
+# Apply coregistration
 echo "================================================================"
 echo "7. Apply co-registration and transform to mif-file " # https://www.fmrib.ox.ac.uk/primers/intro_primer/ExBox18/IntroBox18.html
 echo
@@ -259,6 +260,7 @@ echo
 echo "================================================================"
 
 
+# Create basis model
 echo "================================================================"
 echo "8. Create basis model"
 echo

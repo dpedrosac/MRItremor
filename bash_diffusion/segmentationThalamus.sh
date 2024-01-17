@@ -18,7 +18,7 @@ echo "======================================================================"
 echo " Running thalamic segmentation for all subjects ... "
 echo
 
-# for_each -t -nthreads 40 ./freesurfer/* : segmentThalamicNuclei.sh IN
+for_each -t -nthreads 40 ./freesurfer/* : segmentThalamicNuclei.sh IN
 
 echo
 echo "Done!"
@@ -42,7 +42,8 @@ echo "Done!"
 echo "======================================================================"
 echo
 
-function_thalamusextract() # function to merge all independent dwi sequences to one
+# Function to create thalamic segmentations according to the available data
+function thalamusextract()
 {
 	while IFS=$'\t' read -r number name column3 ; do
 		mri_binarize --i $2/mri/ThalamicNuclei.v12.T1-anat.mgz \
@@ -66,6 +67,6 @@ do
 	echo
 	echo "Processing subj: ${WORKING_DIR##*/}"
 
-	function_thalamusextract ${CURRENT_DIR} ${WORKING_DIR} & 
+	thalamusextract ${CURRENT_DIR} ${WORKING_DIR} & 
 done
 wait

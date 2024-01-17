@@ -16,7 +16,7 @@ export PATH=${ANTSPATH}:$PATH
 
 echo
 echo "======================================================================"
-echo " Obtaining tracts for all four cebellar and thalamic regions within all subjects ... part 1 "
+echo " Obtaining tracts for all four cerebellar and thalamic regions within all subjects ... part 1 "
 echo
 
 for_each -nthreads 4 ./freesurfer/* : tckgen -act ${CURRENT_DIR}/rawdata/NAME/5tt_coreg.mif \
@@ -93,7 +93,7 @@ echo
 
 echo
 echo "======================================================================"
-echo " Concatenating all Tracts for all subjects ... "
+echo " Concatenating all tracts for all subjects including steps from create_tractogram.sh... "
 echo
 
 for_each -nthreads 20 ./rawdata/* : tckedit ${CURRENT_DIR}/rawdata/NAME/*.tck /media/inthd1/MRItremor/rawdata/NAME/tracts_all_concat.tck
@@ -145,8 +145,7 @@ ${CURRANT_DIR}/rawdata/NAME/CON_parcels.csv \
 -symmetric \
 -zero_diagonal \
 -scale_invnodevol \
--nthreads 4 \
--out_assignment ${CURRENT_DIR}/rawdata/NAME/assignments_CON_parcels.csv -force
+-out_assignment ${CURRENT_DIR}/rawdata/NAME/assignments_CON_parcels.csv
 
 echo
 echo "Done!"

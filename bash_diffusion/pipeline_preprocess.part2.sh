@@ -1,16 +1,19 @@
 #!/bin/bash
 # author: David Pedrosa
-# version: 2022-19-10 # changed the way registration is performed fundamentally; i.e. after using registration dwi2T1 at earlier stage.
+# version: 2022-19-10 # changed registration fundamentally; i.e. after using registration dwi2T1 at earlier stage.
 # pipeline to preprocess MRI data. This is an attempt to use the for_each** functionality
-# from the MRITRIX3 pipeline (cf. ./bash/preprocess_pipeline.sh)
+# from the MRITRIX3 pipeline as much as possible (cf. ./bash/preprocess_pipeline.sh)
 # cf. https://www.youtube.com/channel/UCh9KmApDY_z_Zom3x9xrEQw
 
 
 CURRENT_DIR=${PWD}
-PARAMETER_DIR=${PWD}/bash/ # all general settings are stored in this directory
+PARAMETER_DIR=${PWD}/bash/ # all scripts and settings should be stored here
+FLAG_CHECK="FALSE"
 
+
+# Apply basis function
 echo "--------------------------------------------------------------------------------------"
-echo "9. Apply basis function to DWI data ... "
+echo "9. Apply basis function (dwi2fod) to DWI data ... "
 echo
 
 	for_each -nthreads 20 ./rawdata/* : dwi2fod msmt_csd IN/dwi_den_unring_eddycorr_unbiased_coreg.mif \
@@ -22,12 +25,11 @@ echo "--------------------------------------------------------------------------
 echo
 
 
-##	for_each -nthreads 20 ./rawdata/* : mrconvert -coord 3 0 IN/wmfod.mif - | mrcat IN/csffod.mif IN/gmfod.mif - IN/vf.mif -force
+#	for_each -nthreads 20 ./rawdata/* : mrconvert -coord 3 0 IN/wmfod.mif - | mrcat IN/csffod.mif IN/gmfod.mif - IN/vf.mif -force
 
 
-
-function_mrconvert() # function to merge all independent dwi sequences to one
-{
+# function to merge all independent dwi sequences to one
+function mrconvert_DTI(){
 	mrconvert -coord 3 0 $1/wmfod.mif - | mrcat $1/csffod.mif $1/gmfod.mif - $1/vf.mif -force
 }
 
@@ -45,7 +47,7 @@ do
 	echo
 
 	echo "Processing subj: ${WORKING_DIR##*/}"
-	function_mrconvert ${WORKING_DIR} & 
+	mrconvert_DTI ${WORKING_DIR} & 
 done
 wait
 
