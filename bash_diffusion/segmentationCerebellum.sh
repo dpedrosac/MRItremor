@@ -41,14 +41,20 @@ echo
 echo " Copying data to 'freesurfer' folder within ... "
 echo
 
-# for_each -nthreads 20 ./freesurfer/* : cp ${CURRENT_DIR}/rawdata/NAME/Warped_Cerebellar_Atlas.nii ${CURRENT_DIR}/freesurfer/NAME/mri/Warped_Cerebellar_Atlas.nii
+for_each -nthreads 20 ./freesurfer/* : cp ${CURRENT_DIR}/rawdata/NAME/Warped_Cerebellar_Atlas.nii ${CURRENT_DIR}/freesurfer/NAME/mri/Warped_Cerebellar_Atlas.nii
 
 echo
 echo "Done!"
 echo "======================================================================"
 echo
 
-function_cerebellumextract() # function to extract all cerebellar cores/regions from the Diedrichsen Atlas (2011), cf. FSL 
+echo "======================================================================"
+echo
+echo " Extracting all cerebellar subnuclei/regions ... "
+echo
+
+# Extract all cerebellar cores/regions from the Diedrichsen
+function cerebellumextract()  Atlas (2011), cf. FSL 
 {
 	while IFS=$'\t' read -r number name color ; do
 		FILE=/$2/mri/${name}xx.nii.gz
@@ -70,10 +76,6 @@ function_cerebellumextract() # function to extract all cerebellar cores/regions 
 	done < $1/CerebellarAtlas/Diedrichsen_2009/atl-Anatom.tsv
 }
 
-echo "======================================================================"
-echo
-echo " Extracting all cerebellar subnuclei/regions ... "
-echo
 
 num_processes=20
 for WORKING_DIR in ${CURRENT_DIR}/freesurfer/*     # list directories
@@ -85,7 +87,7 @@ do
 	echo
 
 	echo "Processing subj: ${WORKING_DIR##*/}"
-	function_cerebellumextract ${CURRENT_DIR} ${WORKING_DIR} ${SUBJ} & 
+	cerebellumextract ${CURRENT_DIR} ${WORKING_DIR} ${SUBJ} & 
 done
 wait
 
